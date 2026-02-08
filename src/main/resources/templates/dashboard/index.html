@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<div th:fragment="content">
+    <!-- Stats Cards -->
+    <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Loading skeleton -->
+        <div class="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Cost Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Cost Trend (Last 30 Days)</h3>
+            <div class="h-64">
+                <canvas id="costChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Provider Usage Chart -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Provider Split</h3>
+            <div class="h-64">
+                <canvas id="providerChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">Recent Activity</h3>
+        </div>
+        <div id="activity-table" class="overflow-x-auto">
+            <!-- Loading skeleton -->
+            <div class="p-6 space-y-4 animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-full"></div>
+                <div class="h-4 bg-gray-200 rounded w-full"></div>
+                <div class="h-4 bg-gray-200 rounded w-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('jwt');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        }
+
+        // Format number with commas
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-US').format(num);
+        }
+
+        // Load stats cards
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/v1/stats/overview', { headers });
+                if (!response.ok) throw new Error('Failed to load stats');
+                const data = await response.json();
+
+                document.getElementById('stats-cards').innerHTML = `
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <p class="text-sm font-medium text-gray-500">Requests Today</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">${formatNumber(data.requests_today)}</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <p class="text-sm font-medium text-gray-500">Requests This Month</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">${formatNumber(data.requests_month)}</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <p class="text-sm font-medium text-gray-500">Cost This Month</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">${formatCurrency(data.cost_month)}</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <p class="text-sm font-medium text-gray-500">Active Projects</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">${formatNumber(data.active_projects)}</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+                document.getElementById('stats-cards').innerHTML = `
+                    <div class="col-span-4 bg-red-50 text-red-600 p-4 rounded-lg">
+                        Failed to load statistics. Please refresh the page.
+                    </div>
+                `;
+            }
+        }
+
+        // Load activity table
+        async function loadActivity() {
+            try {
+                const response = await fetch('/api/v1/stats/activity?limit=10', { headers });
+                if (!response.ok) throw new Error('Failed to load activity');
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    document.getElementById('activity-table').innerHTML = `
+                        <div class="p-6 text-center text-gray-500">No recent activity</div>
+                    `;
+                    return;
+                }
+
+                const rows = data.map(item => `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900">${item.provider}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${item.model}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                item.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }">${item.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${formatNumber(item.tokens)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${formatCurrency(item.cost)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${item.latency_ms ? item.latency_ms + 'ms' : '-'}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${item.created_at ? new Date(item.created_at).toLocaleString() : '-'}</td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('activity-table').innerHTML = `
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Model</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tokens</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Latency</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Failed to load activity:', error);
+                document.getElementById('activity-table').innerHTML = `
+                    <div class="p-6 text-center text-red-600">Failed to load activity</div>
+                `;
+            }
+        }
+
+        // Load charts
+        let costChart = null;
+        let providerChart = null;
+
+        async function loadCharts() {
+            try {
+                // Load cost data
+                const costResponse = await fetch('/api/v1/stats/costs?days=30', { headers });
+                const costData = await costResponse.json();
+
+                if (costChart) costChart.destroy();
+                const costCtx = document.getElementById('costChart').getContext('2d');
+                costChart = new Chart(costCtx, {
+                    type: 'line',
+                    data: {
+                        labels: costData.map(d => d.date),
+                        datasets: [{
+                            label: 'Cost (USD)',
+                            data: costData.map(d => parseFloat(d.cost)),
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+
+                // Load provider data
+                const providerResponse = await fetch('/api/v1/stats/providers?days=30', { headers });
+                const providerData = await providerResponse.json();
+
+                if (providerChart) providerChart.destroy();
+                const providerCtx = document.getElementById('providerChart').getContext('2d');
+
+                if (providerData.length === 0) {
+                    providerCtx.canvas.parentElement.innerHTML = '<div class="h-64 flex items-center justify-center text-gray-500">No provider data available</div>';
+                    return;
+                }
+
+                providerChart = new Chart(providerCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: providerData.map(d => d.provider),
+                        datasets: [{
+                            data: providerData.map(d => d.request_count),
+                            backgroundColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(16, 185, 129)',
+                                'rgb(245, 158, 11)',
+                                'rgb(239, 68, 68)',
+                                'rgb(139, 92, 246)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load chart data:', error);
+            }
+        }
+
+        // Load all data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadActivity();
+            loadCharts();
+        });
+    </script>
+</div>
+</html>

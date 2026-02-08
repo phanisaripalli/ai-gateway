@@ -1,0 +1,53 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ai-gateway
+  main:
+    web-application-type: reactive
+  
+  # Flyway disabled — schema managed externally
+  flyway:
+    enabled: false
+
+  # Database Configuration (R2DBC)
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ai_gateway}?sslMode=require
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+
+# Admin Account (created on first startup if no admin exists)
+admin:
+  email: ${ADMIN_EMAIL:}
+  password: ${ADMIN_PASSWORD:}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:change-me-in-production}
+  expiration-hours: ${JWT_EXPIRATION_HOURS:24}
+
+# Encryption (for provider API keys stored in DB)
+encryption:
+  key: ${ENCRYPTION_KEY:}
+
+# Provider API Keys (global fallback)
+openai:
+  api-key: ${OPENAI_API_KEY:}
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+gemini:
+  api-key: ${GOOGLE_AI_API_KEY:}
+
+# Rate Limiting
+rate-limit:
+  default-rpm: 60
+
+logging:
+  level:
+    root: INFO
+    org.saripalli.aigateway: DEBUG

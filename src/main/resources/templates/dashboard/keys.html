@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<div th:fragment="content">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <a href="/dashboard/projects" class="text-blue-600 hover:text-blue-700 text-sm mb-2 inline-block">
+                &larr; Back to Projects
+            </a>
+            <h2 class="text-2xl font-bold text-gray-800">API Keys</h2>
+            <p id="project-name" class="text-gray-500"></p>
+        </div>
+        <button onclick="generateKey()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Generate New Key
+        </button>
+    </div>
+
+    <!-- API Keys Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">Client API Keys</h3>
+            <p class="text-sm text-gray-500">Keys that clients use to access your AI Gateway</p>
+        </div>
+        <div id="keys-list" class="overflow-x-auto">
+            <!-- Loading skeleton -->
+            <div class="p-6 space-y-4 animate-pulse">
+                <div class="h-12 bg-gray-200 rounded"></div>
+                <div class="h-12 bg-gray-200 rounded"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provider Credentials Section -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Provider API Keys</h3>
+                <p class="text-sm text-gray-500">Keys the gateway uses to call AI providers (OpenAI, Anthropic, Google)</p>
+            </div>
+            <button onclick="openAddProviderModal()"
+                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Provider Key
+            </button>
+        </div>
+        <div id="provider-credentials-list" class="overflow-x-auto">
+            <div class="p-6 space-y-4 animate-pulse">
+                <div class="h-12 bg-gray-200 rounded"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Key Modal -->
+    <div id="key-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800">New API Key Created</h3>
+                <button onclick="closeKeyModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div class="flex">
+                        <svg class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <p class="text-sm text-yellow-800">
+                            Copy this key now. It will not be shown again.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Your API Key</label>
+                    <div class="flex">
+                        <input type="text" id="new-key-value" readonly
+                               class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-l-lg font-mono text-sm">
+                        <button onclick="copyKey()"
+                                class="px-4 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg hover:bg-gray-200 transition-colors">
+                            <svg id="copy-icon" class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            <svg id="check-icon" class="w-5 h-5 text-green-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button onclick="closeKeyModal()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Done
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Provider Credential Modal -->
+    <div id="provider-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Add Provider API Key</h3>
+            </div>
+            <form id="provider-form" onsubmit="submitProviderKey(event)" class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Provider</label>
+                    <select id="provider-select" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select a provider</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="gemini">Gemini</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                    <input type="password" id="provider-api-key" required
+                           placeholder="sk-... or AIza..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono">
+                    <p class="text-xs text-gray-500 mt-1">Your API key will be encrypted before storage</p>
+                </div>
+
+                <div id="provider-error" class="hidden text-red-600 text-sm mb-4"></div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeProviderModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Save Key
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Generate Key Name Modal -->
+    <div id="generate-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Generate New Key</h3>
+            </div>
+            <form id="generate-form" onsubmit="submitGenerateKey(event)" class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Key Name (optional)</label>
+                    <input type="text" id="key-name" placeholder="e.g., Production, Development"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">A friendly name to identify this key</p>
+                </div>
+
+                <div id="generate-error" class="hidden text-red-600 text-sm mb-4"></div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeGenerateModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" id="generate-btn"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Generate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const projectId = /*[[${projectId}]]*/ '';
+        const token = localStorage.getItem('jwt');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+        };
+
+        // Load project info
+        async function loadProjectInfo() {
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}`, { headers });
+                if (response.ok) {
+                    const project = await response.json();
+                    document.getElementById('project-name').textContent = `Project: ${project.name}`;
+                }
+            } catch (error) {
+                console.error('Failed to load project info:', error);
+            }
+        }
+
+        // Load keys
+        async function loadKeys() {
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}/keys`, { headers });
+                if (!response.ok) throw new Error('Failed to load keys');
+                const keys = await response.json();
+
+                if (keys.length === 0) {
+                    document.getElementById('keys-list').innerHTML = `
+                        <div class="p-12 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            </svg>
+                            <p class="text-gray-500 mb-4">No API keys yet</p>
+                            <button onclick="generateKey()"
+                                    class="text-blue-600 hover:text-blue-700 font-medium">
+                                Generate your first key
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const rows = keys.map(k => `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">${k.key_prefix}...</code>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            ${escapeHtml(k.name || 'Unnamed')}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                k.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }">${k.is_active ? 'Active' : 'Revoked'}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            ${k.rate_limit_rpm} req/min
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            ${k.created_at ? new Date(k.created_at).toLocaleDateString() : '-'}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            ${k.last_used_at ? new Date(k.last_used_at).toLocaleString() : 'Never'}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            ${k.is_active ? `
+                                <button onclick="revokeKey('${k.id}')"
+                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                    </svg>
+                                    Revoke
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('keys-list').innerHTML = `
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rate Limit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Used</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Failed to load keys:', error);
+                document.getElementById('keys-list').innerHTML = `
+                    <div class="p-6 text-center text-red-600">Failed to load API keys</div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Generate key modal
+        function generateKey() {
+            document.getElementById('generate-form').reset();
+            document.getElementById('generate-error').classList.add('hidden');
+            document.getElementById('generate-modal').classList.remove('hidden');
+            document.getElementById('generate-modal').classList.add('flex');
+        }
+
+        function closeGenerateModal() {
+            document.getElementById('generate-modal').classList.add('hidden');
+            document.getElementById('generate-modal').classList.remove('flex');
+        }
+
+        async function submitGenerateKey(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('key-name').value || null;
+
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}/keys`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ name })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to generate key');
+                }
+
+                const result = await response.json();
+                closeGenerateModal();
+
+                // Show the new key
+                document.getElementById('new-key-value').value = result.key;
+                document.getElementById('key-modal').classList.remove('hidden');
+                document.getElementById('key-modal').classList.add('flex');
+
+                // Reload keys list
+                loadKeys();
+            } catch (error) {
+                document.getElementById('generate-error').textContent = error.message;
+                document.getElementById('generate-error').classList.remove('hidden');
+            }
+        }
+
+        // Key display modal
+        function closeKeyModal() {
+            document.getElementById('key-modal').classList.add('hidden');
+            document.getElementById('key-modal').classList.remove('flex');
+        }
+
+        function copyKey() {
+            const keyInput = document.getElementById('new-key-value');
+            keyInput.select();
+            document.execCommand('copy');
+
+            // Show check icon
+            document.getElementById('copy-icon').classList.add('hidden');
+            document.getElementById('check-icon').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('copy-icon').classList.remove('hidden');
+                document.getElementById('check-icon').classList.add('hidden');
+            }, 2000);
+        }
+
+        // Revoke key
+        async function revokeKey(keyId) {
+            if (!confirm('Are you sure you want to revoke this key? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}/keys/${keyId}`, {
+                    method: 'DELETE',
+                    headers
+                });
+
+                if (!response.ok) throw new Error('Failed to revoke key');
+                loadKeys();
+            } catch (error) {
+                alert('Failed to revoke key: ' + error.message);
+            }
+        }
+
+        // ============ Provider Credentials ============
+
+        async function loadProviderCredentials() {
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}/credentials`, { headers });
+                if (!response.ok) throw new Error('Failed to load provider credentials');
+                const credentials = await response.json();
+
+                if (credentials.length === 0) {
+                    document.getElementById('provider-credentials-list').innerHTML = `
+                        <div class="p-8 text-center">
+                            <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            <p class="text-gray-500 mb-2">No provider keys configured</p>
+                            <p class="text-sm text-gray-400">Add API keys for OpenAI, Anthropic, or Google AI</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const providerIcons = {
+                    openai: { bg: 'bg-green-100', text: 'text-green-600', label: 'OAI' },
+                    anthropic: { bg: 'bg-orange-100', text: 'text-orange-600', label: 'ANT' },
+                    gemini: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'GEM' }
+                };
+
+                const providerNames = {
+                    openai: 'OpenAI',
+                    anthropic: 'Anthropic',
+                    gemini: 'Gemini'
+                };
+
+                const rows = credentials.map(c => {
+                    const icon = providerIcons[c.provider] || { bg: 'bg-gray-100', text: 'text-gray-600', label: '?' };
+                    return `
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 ${icon.bg} rounded-lg flex items-center justify-center mr-3">
+                                        <span class="${icon.text} font-bold text-sm">${icon.label}</span>
+                                    </div>
+                                    <span class="font-medium text-gray-900">${providerNames[c.provider] || c.provider}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <code class="bg-gray-100 px-2 py-1 rounded text-sm font-mono">${c.maskedKey}</code>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                ${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '-'}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <button onclick="deleteProviderCredential('${c.provider}')"
+                                        class="inline-flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('provider-credentials-list').innerHTML = `
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Added</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Failed to load provider credentials:', error);
+                document.getElementById('provider-credentials-list').innerHTML = `
+                    <div class="p-6 text-center text-red-600">Failed to load provider credentials</div>
+                `;
+            }
+        }
+
+        function openAddProviderModal() {
+            document.getElementById('provider-form').reset();
+            document.getElementById('provider-error').classList.add('hidden');
+            document.getElementById('provider-modal').classList.remove('hidden');
+            document.getElementById('provider-modal').classList.add('flex');
+        }
+
+        function closeProviderModal() {
+            document.getElementById('provider-modal').classList.add('hidden');
+            document.getElementById('provider-modal').classList.remove('flex');
+        }
+
+        async function submitProviderKey(event) {
+            event.preventDefault();
+
+            const provider = document.getElementById('provider-select').value;
+            const apiKey = document.getElementById('provider-api-key').value;
+
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}/credentials`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ provider, api_key: apiKey })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to save provider key');
+                }
+
+                closeProviderModal();
+                loadProviderCredentials();
+            } catch (error) {
+                document.getElementById('provider-error').textContent = error.message;
+                document.getElementById('provider-error').classList.remove('hidden');
+            }
+        }
+
+        async function deleteProviderCredential(provider) {
+            if (!confirm(`Are you sure you want to remove the ${provider} API key?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/projects/${projectId}/credentials/${provider}`, {
+                    method: 'DELETE',
+                    headers
+                });
+
+                if (!response.ok) throw new Error('Failed to remove provider key');
+                loadProviderCredentials();
+            } catch (error) {
+                alert('Failed to remove provider key: ' + error.message);
+            }
+        }
+
+        // Close modals on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeKeyModal();
+                closeGenerateModal();
+                closeProviderModal();
+            }
+        });
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProjectInfo();
+            loadKeys();
+            loadProviderCredentials();
+        });
+    </script>
+</div>
+</html>

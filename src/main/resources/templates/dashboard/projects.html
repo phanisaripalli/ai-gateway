@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::content})}">
+<div th:fragment="content">
+    <!-- Header with Add button -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Projects</h2>
+        <button onclick="openCreateModal()"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Project
+        </button>
+    </div>
+
+    <!-- Projects Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div id="projects-list" class="overflow-x-auto">
+            <!-- Loading skeleton -->
+            <div class="p-6 space-y-4 animate-pulse">
+                <div class="h-12 bg-gray-200 rounded"></div>
+                <div class="h-12 bg-gray-200 rounded"></div>
+                <div class="h-12 bg-gray-200 rounded"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Project Modal -->
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="modal-title" class="text-lg font-semibold text-gray-800">New Project</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="project-form" onsubmit="submitProject(event)" class="p-6 space-y-4">
+                <input type="hidden" id="project-id">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <input type="text" id="project-name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="project-description" rows="2"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Daily Token Limit</label>
+                        <input type="number" id="project-daily-token-limit" value="1000000"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Daily Cost Limit ($)</label>
+                        <input type="number" step="0.01" id="project-daily-cost-limit" value="10.00"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Token Limit</label>
+                        <input type="number" id="project-monthly-token-limit" value="30000000"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Cost Limit ($)</label>
+                        <input type="number" step="0.01" id="project-monthly-cost-limit" value="100.00"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Default Provider</label>
+                        <select id="project-default-provider"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Auto-select</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Default Capability</label>
+                        <select id="project-default-capability"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="balanced">Balanced</option>
+                            <option value="fast">Fast</option>
+                            <option value="quality">Quality</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="form-error" class="hidden text-red-600 text-sm"></div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" id="submit-btn"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('jwt');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+        };
+
+        // Load projects
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/v1/projects', { headers });
+                if (!response.ok) throw new Error('Failed to load projects');
+                const projects = await response.json();
+
+                if (projects.length === 0) {
+                    document.getElementById('projects-list').innerHTML = `
+                        <div class="p-12 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                            </svg>
+                            <p class="text-gray-500 mb-4">No projects yet</p>
+                            <button onclick="openCreateModal()"
+                                    class="text-blue-600 hover:text-blue-700 font-medium">
+                                Create your first project
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const rows = projects.map(p => `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900">${escapeHtml(p.name)}</div>
+                            <div class="text-sm text-gray-500">${escapeHtml(p.description || '')}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            ${p.default_provider || 'Auto'}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            ${p.monthly_cost_limit ? '$' + p.monthly_cost_limit : 'No limit'}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            ${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <a href="/dashboard/projects/${p.id}/keys"
+                               class="inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                                Keys
+                            </a>
+                            <button onclick='editProject(${JSON.stringify(p)})'
+                                    class="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Edit
+                            </button>
+                            <button onclick="deleteProject('${p.id}', '${escapeHtml(p.name)}')"
+                                    class="inline-flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('projects-list').innerHTML = `
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Limit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+                document.getElementById('projects-list').innerHTML = `
+                    <div class="p-6 text-center text-red-600">Failed to load projects</div>
+                `;
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Modal functions
+        function openCreateModal() {
+            document.getElementById('modal-title').textContent = 'New Project';
+            document.getElementById('submit-btn').textContent = 'Create Project';
+            document.getElementById('project-form').reset();
+            document.getElementById('project-id').value = '';
+            document.getElementById('form-error').classList.add('hidden');
+            document.getElementById('project-modal').classList.remove('hidden');
+            document.getElementById('project-modal').classList.add('flex');
+        }
+
+        function editProject(project) {
+            document.getElementById('modal-title').textContent = 'Edit Project';
+            document.getElementById('submit-btn').textContent = 'Save Changes';
+            document.getElementById('project-id').value = project.id;
+            document.getElementById('project-name').value = project.name || '';
+            document.getElementById('project-description').value = project.description || '';
+            document.getElementById('project-daily-token-limit').value = project.daily_token_limit || '';
+            document.getElementById('project-daily-cost-limit').value = project.daily_cost_limit || '';
+            document.getElementById('project-monthly-token-limit').value = project.monthly_token_limit || '';
+            document.getElementById('project-monthly-cost-limit').value = project.monthly_cost_limit || '';
+            document.getElementById('project-default-provider').value = project.default_provider || '';
+            document.getElementById('project-default-capability').value = project.default_capability || 'balanced';
+            document.getElementById('form-error').classList.add('hidden');
+            document.getElementById('project-modal').classList.remove('hidden');
+            document.getElementById('project-modal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('project-modal').classList.add('hidden');
+            document.getElementById('project-modal').classList.remove('flex');
+        }
+
+        // Submit project form
+        async function submitProject(event) {
+            event.preventDefault();
+
+            const projectId = document.getElementById('project-id').value;
+            const isEdit = !!projectId;
+
+            const toIntOrNull = (val) => val ? parseInt(val, 10) : null;
+            const toFloatOrNull = (val) => val ? parseFloat(val) : null;
+            const toStringOrNull = (val) => val || null;
+
+            const data = {
+                name: document.getElementById('project-name').value,
+                description: toStringOrNull(document.getElementById('project-description').value),
+                daily_token_limit: toIntOrNull(document.getElementById('project-daily-token-limit').value),
+                daily_cost_limit: toFloatOrNull(document.getElementById('project-daily-cost-limit').value),
+                monthly_token_limit: toIntOrNull(document.getElementById('project-monthly-token-limit').value),
+                monthly_cost_limit: toFloatOrNull(document.getElementById('project-monthly-cost-limit').value),
+                default_provider: toStringOrNull(document.getElementById('project-default-provider').value),
+                default_capability: document.getElementById('project-default-capability').value || 'balanced'
+            };
+
+            try {
+                const url = isEdit ? `/api/v1/projects/${projectId}` : '/api/v1/projects';
+                const method = isEdit ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to save project');
+                }
+
+                closeModal();
+                loadProjects();
+            } catch (error) {
+                document.getElementById('form-error').textContent = error.message;
+                document.getElementById('form-error').classList.remove('hidden');
+            }
+        }
+
+        // Delete project
+        async function deleteProject(id, name) {
+            if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/projects/${id}`, {
+                    method: 'DELETE',
+                    headers
+                });
+
+                if (!response.ok) throw new Error('Failed to delete project');
+                loadProjects();
+            } catch (error) {
+                alert('Failed to delete project: ' + error.message);
+            }
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('project-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+
+        // Load projects on page load
+        document.addEventListener('DOMContentLoaded', loadProjects);
+    </script>
+</div>
+</html>
