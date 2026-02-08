@@ -40,6 +40,8 @@ class SecurityConfig(
                     .pathMatchers("/actuator/**").permitAll()
                     .pathMatchers("/login", "/chat", "/api/v1/auth/login", "/api/v1/auth/logout").permitAll()
                     .pathMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                    // API Documentation
+                    .pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                     // Admin-only: dashboard UI and management APIs
                     .pathMatchers("/dashboard/**").hasRole("ADMIN")
                     .pathMatchers("/api/v1/**").hasRole("ADMIN")

@@ -58,6 +58,9 @@ dependencies {
     // Dashboard
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
+    // API Documentation
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.8")
+
     // Environment variables from .env file
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
 

@@ -169,6 +169,10 @@ The API accepts both `capability` and `provider`. Routing priority:
 | `thinking` | gemini-2.5-flash-thinking | o3 | claude-sonnet-4-5 |
 | `best` | gemini-2.5-pro | gpt-4.1 | claude-opus-4-5 |
 
+## API Documentation
+
+Interactive API documentation is available at `<base_url>/swagger-ui.html` (e.g., `http://localhost:8080/swagger-ui.html`).
+
 ## API Reference
 
 | Endpoint | Description |

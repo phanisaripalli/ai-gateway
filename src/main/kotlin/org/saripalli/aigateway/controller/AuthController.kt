@@ -1,5 +1,9 @@
 package org.saripalli.aigateway.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.saripalli.aigateway.repository.AdminRepository
 import org.saripalli.aigateway.security.JwtService
 import org.springframework.http.HttpHeaders
@@ -30,12 +34,18 @@ data class ChangePasswordRequest(
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@Tag(name = "Auth", description = "Authentication endpoints")
 class AuthController(
     private val adminRepository: AdminRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService
 ) {
 
+    @Operation(summary = "Admin login", description = "Authenticates admin and returns JWT token")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Login successful"),
+        ApiResponse(responseCode = "401", description = "Invalid credentials")
+    )
     @PostMapping("/login")
     fun login(@RequestBody request: LoginRequest): Mono<ResponseEntity<Any>> {
         return adminRepository.findByEmail(request.email)
@@ -59,6 +69,7 @@ class AuthController(
             )
     }
 
+    @Operation(summary = "Logout", description = "Clears the auth cookie")
     @PostMapping("/logout")
     fun logout(): Mono<ResponseEntity<Void>> {
         val cookie = jwtService.createLogoutCookie()
@@ -69,6 +80,12 @@ class AuthController(
         )
     }
 
+    @Operation(summary = "Change password", description = "Changes the admin password (requires current password)")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Password changed"),
+        ApiResponse(responseCode = "400", description = "Invalid current password or weak new password"),
+        ApiResponse(responseCode = "401", description = "Not authenticated")
+    )
     @PostMapping("/change-password")
     fun changePassword(
         @RequestBody request: ChangePasswordRequest,

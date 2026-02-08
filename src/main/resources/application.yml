@@ -47,6 +47,15 @@ gemini:
 rate-limit:
   default-rpm: 60
 
+# OpenAPI Documentation
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
 logging:
   level:
     root: INFO
