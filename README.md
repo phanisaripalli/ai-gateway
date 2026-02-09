@@ -33,7 +33,7 @@ Your App → AI Gateway → [Gemini | OpenAI | Anthropic]
 
 ## Prerequisites
 
-- Java 21+
+- Java 21
 - PostgreSQL 14+
 - Gradle 8+ (or use the included wrapper)
 
@@ -230,7 +230,44 @@ provider_usage (provider, date, total_tokens, total_cost, request_count)
 
 ## Docker
 
-_Coming soon_
+### Prerequisites
+- External PostgreSQL database with schema applied
+- `.env` file configured (see [Configure environment](#3-configure-environment))
+
+### Run with Docker Compose
+
+```bash
+# Build and run
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+Docker Compose automatically loads environment variables from `.env`.
+
+### Run with Docker
+
+```bash
+# Build
+docker build -t ai-gateway .
+
+# Run
+docker run -p 8080:8080 --env-file .env ai-gateway
+```
+
+### Scaling
+
+Run multiple instances pointing to the same database:
+
+```bash
+docker-compose up -d --scale ai-gateway=3
+```
+
+Use a load balancer (nginx, Traefik, etc.) in front of the instances.
 
 ## License
 

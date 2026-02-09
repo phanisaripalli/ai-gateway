@@ -1,0 +1,24 @@
+# Build outputs
+build/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+
+# Environment
+.env
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Docker
+Dockerfile
+docker-compose*.yml
